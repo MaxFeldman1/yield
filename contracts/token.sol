@@ -119,7 +119,35 @@ contract token is ERC20, yield {
         autoClaimYield[msg.sender] = !autoClaimYield[msg.sender];
     }
 
-    //------------contract specific---------------
+    //------------this contract specific---------------
+    /*
+        Every time contractClaimDividend is called another index is added
+            the value of each index is (previousIndex)+(total amound of dividends created since last call to contractClaimDividend)
+        Thus this is the sum of all inflows of Other Asset into this contract
+    */
+    uint256[] public contractOtherAsset;
+    /*
+        It should be noted that balanceOtherAsset does not resemble a claim on any asset,
+        for the purpose of this implementation we use balaneOtherAsset as a dummy claim on another asset,
+        in an actual implementation balanceOtherAsset would be replaced with balanceOf{Insert Asset Name Here}
+    */
+    mapping(address => uint256) public balanceOtherAsset;
+
+    //lastClaim represents the last index of the contractOtherAsset array for each address at the most recent time that claim(said address) was called
+    mapping(address => uint256) public lastClaim;
+
+    /*
+        @Description: moves yield to the token owner in yieldDistribution, the mapping yieldDistribution moves yield from
+            yieldDistribution[_tokenOwner][_yieldOwner] to
+            yieldDistribution[_tokenOwner][_tokenOwner]
+            Thus allowing token owners to recieve dividends on the tokens that they own
+
+        @param address _tokenOwner: the address that owns the tokens and will recieve the yield
+        @param address _yieldOwner: the address from which to transfer the yield
+        @param uint256 _value: the amount of yield to transfer
+
+        @return bool success: if an error occurs returns false if no error return true
+    */
     function claimYeildInternal(address _tokenOwner, address _yieldOwner, uint256 _value) internal {
         require(yieldDistribution[_tokenOwner][_yieldOwner] >= _value);
         claimDividendInternal(_tokenOwner);
@@ -132,6 +160,9 @@ contract token is ERC20, yield {
 
     }
 
+    /*
+        @Description: users may call this function to force this contract to make avaliable dividends that have been produced since the last call of this function
+    */
     function contractClaimDividend() public {
         //usually there would be a require statement that ensures calls to this function are seperated by a minimum amount of time
         //dummy function spoofs an increace in contract balance of some non exixtent asset
@@ -139,15 +170,14 @@ contract token is ERC20, yield {
         contractOtherAsset.push(contractOtherAsset[contractOtherAsset.length -1] + amount);
     }
 
+    /*
+        @Description: disributes to addresses their share of the total dividends based on their balance in totalYield compared to the total supply
+    */
     function claimDividendInternal(address _addr) internal {
         uint mostRecent = lastClaim[_addr];
         lastClaim[_addr] = contractOtherAsset.length-1;
         uint totalIncreace = contractOtherAsset[contractOtherAsset.length-1] - contractOtherAsset[mostRecent];
         balanceOtherAsset[_addr] += totalIncreace * totalYield[_addr] / totalSupply;
     }
-    uint256[] public contractOtherAsset;
-
-    mapping(address => uint256) public balanceOtherAsset;
-    mapping(address => uint256) public lastClaim;
 
 }
