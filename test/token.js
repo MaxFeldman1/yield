@@ -23,10 +23,6 @@ contract('token', function(accounts){
 		}).then((res) => {
 			assert.equal(res.toNumber(), totalSupply, "deployerAccount initially holds all coins");
 			transferAmount = 10 * subUnits;
-			//enable autoClaimYield to allow for minimal non erc20 calls
-			/*tokenInstance.setAutoClaimYield({from: deployerAccount});
-			tokenInstance.setAutoClaimYield({from: accounts[1]});
-			tokenInstance.setAutoClaimYield({from: accounts[2]});*/
 			return tokenInstance.transfer(accounts[1], transferAmount, {from: deployerAccount});
 		}).then(() => {
 			return tokenInstance.balanceOf(deployerAccount);
@@ -55,7 +51,7 @@ contract('token', function(accounts){
 		});
 	});
 
-	it('uses specific allowances and transferFromTokenOwner autoClaim off', () => {
+	it('uses specific allowances and transferTokenOwnerFrom, autoClaim off', () => {
 		amount = 10 * subUnits;
 		return tokenInstance.sendYield(accounts[2], amount, {from: deployerAccount}).then(() => {
 			return tokenInstance.totalYield(accounts[2]);
@@ -75,7 +71,7 @@ contract('token', function(accounts){
 			return tokenInstance.balanceOf(deployerAccount);
 		}).then((res) => {
 			initalBalanceDeployer = res.toNumber();
-			return tokenInstance.transferFromTokenOwner(deployerAccount, accounts[1], amount, accounts[2], {from: accounts[1]});
+			return tokenInstance.transferTokenOwnerFrom(deployerAccount, accounts[1], amount, accounts[2], {from: accounts[1]});
 		}).then(() => {
 			return tokenInstance.balanceOf(deployerAccount);
 		}).then((res) => {
@@ -98,7 +94,7 @@ contract('token', function(accounts){
 		});
 	});
 
-	it('uses transferTokenOwner autoClaim off', () => {
+	it('uses transferTokenOwner, autoClaim off', () => {
 		amount = 10 * subUnits;
 		return tokenInstance.sendYield(accounts[2], amount, {from: deployerAccount}).then(() => {
 			return tokenInstance.totalYield(accounts[2]);
@@ -163,7 +159,7 @@ contract('token', function(accounts){
 			return tokenInstance.yieldDistribution(deployerAccount, accounts[2]);
 		}).then((res) => {
 			assert.equal(res.toNumber(), initialDeployerSecond+amount, "correct value of yieldDistribution[deployer][second account] first pass");
-			return tokenInstance.claimYieldPublic(accounts[2], amount, {from: deployerAccount});
+			return tokenInstance.claimYield(accounts[2], amount, {from: deployerAccount});
 		}).then(() => {
 			return tokenInstance.totalYield(accounts[2]);
 		}).then((res) => {
@@ -182,26 +178,26 @@ contract('token', function(accounts){
 
 	it('sets auto claim', () => {
 		amount = 10 * subUnits;
-		return tokenInstance.autoClaim(deployerAccount).then((res) => {
-			assert.equal(res, false, "autoClaim deployer is false by default");
-			return tokenInstance.autoClaim(accounts[1]);
+		return tokenInstance.autoClaimYield(deployerAccount).then((res) => {
+			assert.equal(res, false, "autoClaimYield deployer is false by default");
+			return tokenInstance.autoClaimYield(accounts[1]);
 		}).then((res) => {
-			assert.equal(res, false, "autoClaim firstAccount is false by default");
+			assert.equal(res, false, "autoClaimYield firstAccount is false by default");
 			tokenInstance.setAutoClaimYield({from: deployerAccount});
 			return tokenInstance.setAutoClaimYield({from: accounts[1]});
 		}).then(() => {
-			return tokenInstance.autoClaim(deployerAccount);
+			return tokenInstance.autoClaimYield(deployerAccount);
 		}).then((res) => {
-			assert.equal(res, true, "autoClaim deployer set to true");
-			return tokenInstance.autoClaim(accounts[1]);
+			assert.equal(res, true, "autoClaimYield deployer set to true");
+			return tokenInstance.autoClaimYield(accounts[1]);
 		}).then((res) => {
-			assert.equal(res, true, "autoClaim first account set to true");
+			assert.equal(res, true, "autoClaimYield first account set to true");
 		});
 	});
 
-	it('uses transferTokenOwner autoClaim on', () => {
+	it('uses transferTokenOwner, autoClaim on', () => {
 		amount = 10 * subUnits;
-		return tokenInstance.autoClaim(accounts[1]).then((res) => {
+		return tokenInstance.autoClaimYield(accounts[1]).then((res) => {
 			if (res) return (new Promise((resolve, reject) => {resolve();}));
 			else return tokenInstance.setAutoClaimYield({from: accounts[1]});
 		}).then(() => {
@@ -254,9 +250,9 @@ contract('token', function(accounts){
 		});
 	});
 
-	it('uses specific allowances and transferFromTokenOwner autoClaim on', () => {
+	it('uses specific allowances and transferTokenOwnerFrom, autoClaim on', () => {
 		amount = 10 * subUnits;
-		return tokenInstance.autoClaim(accounts[1]).then((res) => {
+		return tokenInstance.autoClaimYield(accounts[1]).then((res) => {
 			if (res) return (new Promise((resolve, reject) => {resolve();}));
 			else return tokenInstance.setAutoClaimYield({from: accounts[1]});
 		}).then(() => {
@@ -291,7 +287,7 @@ contract('token', function(accounts){
 			return tokenInstance.balanceOf(deployerAccount);
 		}).then((res) => {
 			initalBalanceDeployer = res.toNumber();
-			return tokenInstance.transferFromTokenOwner(deployerAccount, accounts[1], amount, accounts[2], {from: accounts[1]});
+			return tokenInstance.transferTokenOwnerFrom(deployerAccount, accounts[1], amount, accounts[2], {from: accounts[1]});
 		}).then(() => {
 			return tokenInstance.balanceOf(deployerAccount);
 		}).then((res) => {
