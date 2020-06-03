@@ -11,6 +11,21 @@ contract token is ERC20, yield {
         Ownership of one token sub unit gives the owner of the token a yield of (1/totalSupply)*totalContractDividend 
         Owners of tokens may give their yield to other accounts
     */
+    //same as Transfer in ERC20 except it adds yield owner of the funds transfered
+    event Transfer(
+        address indexed _from,
+        address indexed _to,
+        uint256 _value,
+        address indexed _yieldOwner
+    );
+
+    //same as Approval in ERC20 except it adds yield owner of the funds approved
+    event Approval(
+        address indexed _owner,
+        address indexed _spender,
+        uint256 _value,
+        address indexed _yieldOwner
+    );
 
 	constructor (uint256 _totalCoins, uint8 _decimals) public {
 		if (_totalCoins == 0) _totalCoins = 1000000;
