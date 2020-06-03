@@ -46,7 +46,7 @@ contract token is ERC20, yield {
     mapping(address => mapping(address => mapping(address => uint256))) public specificAllowance;
     mapping(address => mapping(address => uint256)) public yieldDistribution;
     mapping(address => uint256) public totalYield;
-    mapping(address => bool) public autoClaimYield;
+    mapping(address => bool) public autoClaimYieldDisabled;
 
     function transferTokenOwner(address _to, uint256 _value, address _yieldOwner) public returns (bool success) {
     	require(yieldDistribution[msg.sender][_yieldOwner] >= _value);
@@ -56,7 +56,7 @@ contract token is ERC20, yield {
 		yieldDistribution[_to][_yieldOwner] += _value;
 		balanceOf[_to] += _value;
 
-        if (autoClaimYield[_to]) claimYeildInternal(_to, _yieldOwner, _value);
+        if (!autoClaimYieldDisabled[_to]) claimYeildInternal(_to, _yieldOwner, _value);
 
 		emit Transfer(msg.sender, _to, _value, _yieldOwner);
 
@@ -85,7 +85,7 @@ contract token is ERC20, yield {
 		yieldDistribution[_to][_yieldOwner] += _value;
 		balanceOf[_to] += _value;
 
-        if (autoClaimYield[_to]) claimYeildInternal(_to, _yieldOwner, _value);
+        if (!autoClaimYieldDisabled[_to]) claimYeildInternal(_to, _yieldOwner, _value);
 
 		emit Transfer(_from, _to, _value, _yieldOwner);
 
@@ -116,7 +116,7 @@ contract token is ERC20, yield {
     }
 
     function setAutoClaimYield() public {
-        autoClaimYield[msg.sender] = !autoClaimYield[msg.sender];
+        autoClaimYieldDisabled[msg.sender] = !autoClaimYieldDisabled[msg.sender];
     }
 
     //------------this contract specific---------------

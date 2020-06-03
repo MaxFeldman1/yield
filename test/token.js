@@ -51,15 +51,21 @@ contract('token', function(accounts){
 		});
 	});
 
-	it('uses specific allowances and transferTokenOwnerFrom, autoClaim off', () => {
+	it('uses specific allowances and transferTokenOwnerFrom, autoClaim on', () => {
 		amount = 10 * subUnits;
 		return tokenInstance.sendYield(accounts[2], amount, {from: deployerAccount}).then(() => {
 			return tokenInstance.totalYield(accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), amount, "totalYield increaced for yield recipient");
+			initialYieldSecond = res.toNumber();
 			return tokenInstance.yieldDistribution(deployerAccount, accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), amount, "yield distribution is correct yield recipient");
+			initialDeployerSecondYield = res.toNumber()
+			return tokenInstance.yieldDistribution(accounts[1], accounts[1]);
+		}).then((res) => {
+			initialFirstFirstYield = res.toNumber();
+			return tokenInstance.yieldDistribution(accounts[1], accounts[2]);
+		}).then((res) => {
+			initialFirstSecondYield = res.toNumber();
 			return tokenInstance.approveYieldOwner(accounts[1], amount, accounts[2], {from: deployerAccount});
 		}).then(() => {
 			return tokenInstance.specificAllowance(deployerAccount, accounts[1], accounts[2]);
@@ -84,28 +90,34 @@ contract('token', function(accounts){
 			assert.equal(res.toNumber(), 0, "specific allowance reduced correctly");
 			return tokenInstance.totalYield(accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), amount, "totalYield did not change for yield owner");
+			assert.equal(res.toNumber(), initialYieldSecond-amount, "totalYield decreaced for second account");
 			return tokenInstance.yieldDistribution(deployerAccount, accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), 0, "yieldDistribution[deployer][second account] set to 0");
+			assert.equal(res.toNumber(), initialDeployerSecondYield-amount, "yieldDistribution[deployer][second account] decreaced by amount");
 			return tokenInstance.yieldDistribution(accounts[1], accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), amount, "yieldDistribution[token recipient][yield owner] increaced by correct amount");
+			assert.equal(res.toNumber(), initialFirstSecondYield, "yieldDistribution[token recipient][yield owner] remains the same");
+			return tokenInstance.yieldDistribution(accounts[1], accounts[1]);
+		}).then((res) => {
+			assert.equal(res.toNumber(), initialFirstFirstYield+amount, "yieldDistribution[first account][first account] increaced by correct amount");
 		});
 	});
 
-	it('uses transferTokenOwner, autoClaim off', () => {
+	it('uses transferTokenOwner, autoClaim on', () => {
 		amount = 10 * subUnits;
 		return tokenInstance.sendYield(accounts[2], amount, {from: deployerAccount}).then(() => {
 			return tokenInstance.totalYield(accounts[2]);
 		}).then((res) => {
-			initialYield = res.toNumber();
+			initialYieldSecond = res.toNumber();
 			return tokenInstance.yieldDistribution(deployerAccount, accounts[2]);
 		}).then((res) => {
 			initialDeployerSecondYield = res.toNumber();
 			return tokenInstance.yieldDistribution(accounts[1], accounts[2]);
 		}).then((res) => {
 			initialFirstSecondYield = res.toNumber();
+			return tokenInstance.yieldDistribution(accounts[1], accounts[1]);
+		}).then((res) => {
+			initialFirstFirstYield = res.toNumber();
 			return tokenInstance.balanceOf(accounts[1]);
 		}).then((res) => {
 			initalBalanceFirstAct = res.toNumber();
@@ -116,19 +128,22 @@ contract('token', function(accounts){
 		}).then(() => {
 			return tokenInstance.balanceOf(deployerAccount);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initalBalanceDeployer-amount, "correct token balance for the sender");
+			assert.equal(res.toNumber(), initalBalanceDeployer-amount, "correct token balance for deployer account");
 			return tokenInstance.balanceOf(accounts[1]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initalBalanceFirstAct+amount, "correct token balance for the receiver");
+			assert.equal(res.toNumber(), initalBalanceFirstAct+amount, "correct token balance for the first account");
 			return tokenInstance.totalYield(accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialYield, "totalYield did not change for yield owner");
+			assert.equal(res.toNumber(), initialYieldSecond-amount, "totalYield correct for second account");
 			return tokenInstance.yieldDistribution(deployerAccount, accounts[2]);
 		}).then((res) => {
 			assert.equal(res.toNumber(), initialDeployerSecondYield-amount, "yieldDistribution[deployer][second account] decreaced by amount");
 			return tokenInstance.yieldDistribution(accounts[1], accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialFirstSecondYield+amount, "yieldDistribution[token recipient][yield owner] increaced by correct amount");
+			assert.equal(res.toNumber(), initialFirstSecondYield, "yieldDistribution[token recipient][yield owner] remained the same");
+			return tokenInstance.yieldDistribution(accounts[1], accounts[1]);
+		}).then((res) => {
+			assert.equal(res.toNumber(), initialFirstFirstYield+amount, "yieldDistribution[first account][first account] increaced by amount");
 		});
 	});
 
@@ -178,26 +193,26 @@ contract('token', function(accounts){
 
 	it('sets auto claim', () => {
 		amount = 10 * subUnits;
-		return tokenInstance.autoClaimYield(deployerAccount).then((res) => {
-			assert.equal(res, false, "autoClaimYield deployer is false by default");
-			return tokenInstance.autoClaimYield(accounts[1]);
+		return tokenInstance.autoClaimYieldDisabled(deployerAccount).then((res) => {
+			assert.equal(res, false, "autoClaimYieldDisabled deployer is false by default");
+			return tokenInstance.autoClaimYieldDisabled(accounts[1]);
 		}).then((res) => {
-			assert.equal(res, false, "autoClaimYield firstAccount is false by default");
+			assert.equal(res, false, "autoClaimYieldDisabled firstAccount is false by default");
 			tokenInstance.setAutoClaimYield({from: deployerAccount});
 			return tokenInstance.setAutoClaimYield({from: accounts[1]});
 		}).then(() => {
-			return tokenInstance.autoClaimYield(deployerAccount);
+			return tokenInstance.autoClaimYieldDisabled(deployerAccount);
 		}).then((res) => {
-			assert.equal(res, true, "autoClaimYield deployer set to true");
-			return tokenInstance.autoClaimYield(accounts[1]);
+			assert.equal(res, true, "autoClaimYieldDisabled deployer set to true");
+			return tokenInstance.autoClaimYieldDisabled(accounts[1]);
 		}).then((res) => {
-			assert.equal(res, true, "autoClaimYield first account set to true");
+			assert.equal(res, true, "autoClaimYieldDisabled first account set to true");
 		});
 	});
 
-	it('uses transferTokenOwner, autoClaim on', () => {
+	it('uses transferTokenOwner, autoClaim off', () => {
 		amount = 10 * subUnits;
-		return tokenInstance.autoClaimYield(accounts[1]).then((res) => {
+		return tokenInstance.autoClaimYieldDisabled(accounts[1]).then((res) => {
 			if (res) return (new Promise((resolve, reject) => {resolve();}));
 			else return tokenInstance.setAutoClaimYield({from: accounts[1]});
 		}).then(() => {
@@ -234,25 +249,25 @@ contract('token', function(accounts){
 			assert.equal(res.toNumber(), initalBalanceFirstAct+amount, "correct token balance for the receiver");
 			return tokenInstance.totalYield(accounts[1]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialYieldFirst+amount, "totalYield[second account] increaced due to autoClaim");
+			assert.equal(res.toNumber(), initialYieldFirst, "totalYield[first account] remained the same");
 			return tokenInstance.totalYield(accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialYieldSecond-amount, "totalYield did not change for yield owner");
+			assert.equal(res.toNumber(), initialYieldSecond, "totalYield[second account] remained the same");
 			return tokenInstance.yieldDistribution(deployerAccount, accounts[2]);
 		}).then((res) => {
 			assert.equal(res.toNumber(), initialDeployerSecondYield-amount, "yieldDistribution[deployer][second account] decreaced by amount");
 			return tokenInstance.yieldDistribution(accounts[1], accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialFirstSecondYield, "yieldDistribution[token recipient][yield owner] remians constant");
+			assert.equal(res.toNumber(), initialFirstSecondYield+amount, "yieldDistribution[token recipient][yield owner] increaced by amount");
 			return tokenInstance.yieldDistribution(accounts[1], accounts[1]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialFirstFirstYield+amount, "yieldDistribution[first account][first account] increaced due to autoClaim");
+			assert.equal(res.toNumber(), initialFirstFirstYield, "yieldDistribution[first account][first account] remains the same");
 		});
 	});
 
-	it('uses specific allowances and transferTokenOwnerFrom, autoClaim on', () => {
+	it('uses specific allowances and transferTokenOwnerFrom, autoClaim off', () => {
 		amount = 10 * subUnits;
-		return tokenInstance.autoClaimYield(accounts[1]).then((res) => {
+		return tokenInstance.autoClaimYieldDisabled(accounts[1]).then((res) => {
 			if (res) return (new Promise((resolve, reject) => {resolve();}));
 			else return tokenInstance.setAutoClaimYield({from: accounts[1]});
 		}).then(() => {
@@ -300,19 +315,19 @@ contract('token', function(accounts){
 			assert.equal(res.toNumber(), 0, "specific allowance reduced correctly");
 			return tokenInstance.totalYield(accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialYieldSecond-amount, "totalYield decreaced for second account");
+			assert.equal(res.toNumber(), initialYieldSecond, "totalYield constant for second account");
 			return tokenInstance.totalYield(accounts[1]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialYieldFirst+amount, "totalYield increaced for first account due to autoClaim");
+			assert.equal(res.toNumber(), initialYieldFirst, "totalYield constant for first account");
 			return tokenInstance.yieldDistribution(deployerAccount, accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialDeployerSecondYield-amount, "yieldDistribution[deployer][second account] decreaced");
+			assert.equal(res.toNumber(), initialDeployerSecondYield-amount, "yieldDistribution[deployer][second account] decreaced by amount");
 			return tokenInstance.yieldDistribution(accounts[1], accounts[2]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialFirstSecondYield, "yieldDistribution[token recipient][yield owner] did not change");
+			assert.equal(res.toNumber(), initialFirstSecondYield+amount, "yieldDistribution[token recipient][yield owner] increaced by amount");
 			return tokenInstance.yieldDistribution(accounts[1], accounts[1]);
 		}).then((res) => {
-			assert.equal(res.toNumber(), initialFirstFirstYield+amount, "yieldDistribution[first account][first account] increaced due to autochange");
+			assert.equal(res.toNumber(), initialFirstFirstYield, "yieldDistribution[first account][first account] remains the same");
 		});
 	});
 });

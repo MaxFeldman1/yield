@@ -54,7 +54,7 @@ interface  yield {
 	function specificAllowance(address, address, address) external view returns (uint256);
 
 	//mapping (address) => (whether or not to automatically claim yeild when tokens are transfered to this address)
-	function autoClaimYield(address) external view returns (bool);
+	function autoClaimYieldDisabled(address) external view returns (bool);
 
 	/*
 		@Description: moves yield to the token owner in yieldDistribution, the mapping yieldDistribution moves yield from
